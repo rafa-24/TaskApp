@@ -1,54 +1,84 @@
-// Create task example
-const create = (req, res) => {
+const { taskRepository } = require("../repository/task.repository")
+
+
+
+const create = async (req, res) => {
       const newTask = {
             id: req.body.id,
             title: req.body.title,
-            message: req.body.message,
-            status: false,
+            description: req.body.description,
+            completed: req.body.completed,
       }
-      res.status(201).json({
-            message: 'post creado',
-            newTask
-      });
-}
 
-// Obtener todas las tareas
-const getAll = (req, res) => {
-      res.json({ message: 'Retornar todas las tareas' });
-}
+      await taskRepository.save(newTask);
 
-// Obtener tarea por id
-const getById = (req, res) => {
-      const id = req.params;
-      console.log(id);
+      return res.json({ message: 'tarea creada con exito', newTask });
 
 }
 
-// Editar
-const edit = (req, res) => {
-      // obtener el id
-      const taskId = req.params;
-      res.json({ message: `Editando esta tarea ${taskId}` });
-}
 
-// Eliminar
-const deleteTask = (req, res) => {
-      // obtener el id
-      const taskId = req.params;
-      res.json({ message: `Eliminando esta tarea ${taskId}` });
+const getAll = async (req, res) => {
+      const allTask = await taskRepository.find()
+      return res.json({ message: 'Estas son todas las tareas', allTask });
 }
 
 
-const test = (req, res) => {
-      const taskId = res.send(req.params);
-      console.log(taskId);
+const getById = async (req, res) => {
+
+      const { id } = req.params;
+      Number(id);
+
+      if (id) {
+            const taskId = await taskRepository.findOneBy({
+                  id: id
+            });
+            return res.status(200).json({ message: `Tarea encontrada con id ${id}`, taskId });
+      } else {
+            return res.status(400).send('id invalido');
+      }
 }
+
+
+const edit = async (req, res) => {
+
+      const { id } = req.params;
+      Number(id);
+
+      try {
+            const taskId = await taskRepository.findOneBy({ id: id });
+
+            if (!taskId) return res.status(404).json({ message: 'Esta tarea no existe' });
+
+            await taskRepository.update({ id: id }, req.body);
+
+            return res.status(200).json({ message: 'Tarea actualizada con exito' });
+      }
+      catch (err) {
+            console.error(err);
+      }
+
+}
+
+
+const deleteTask = async (req, res) => {
+      const { id } = req.params;
+      Number(id);
+
+      if (id) {
+            taskRepository.delete({ id: id });
+            res.status(200).json({ message: `Has eliminado la tarea con id ${id}` });
+      } else {
+            res.status(404).json({ message: 'No se puedo eliminar tarea' });
+      }
+
+}
+
+
 
 module.exports = {
       create,
       getAll,
       getById,
       edit,
-      deleteTask,
-      test
+      deleteTask
 }
